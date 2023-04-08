@@ -1,3 +1,4 @@
+
 collie(fred).
 master(fred,sam).
 day(saturday).
