@@ -1,3 +1,4 @@
+% dynamic하게 likes를 사용할 것. 인자는 2개라는 뜻.
 :- dynamic likes/2.
 
 likes(george, kate).
