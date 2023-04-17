@@ -19,3 +19,9 @@ biglist2(N,[N|T]):-
 	M is N-1,
 	M=M,
 	biglist2(M,T).
+
+biglist3(0,[]).
+biglist3(N,[N|T]):-
+	M is N+1,
+	M=M,
+	biglist3(M,T).
