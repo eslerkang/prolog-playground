@@ -1,4 +1,5 @@
 :- use_module(library(clpfd)).
+% clpfd -> finite domain
 
 puzzle([S,E,N,D] + [M,O,R,E] = [M,O,N,E,Y]) :-
 	Vars = [S,E,N,D,M,O,R,Y],
