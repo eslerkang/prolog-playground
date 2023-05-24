@@ -19,6 +19,7 @@ print_stack(S):-empty_stack(S).
 print_stack(S):-stack(E, Rest, S), write(E), write(' '), print_stack(Rest). /*, nl. */
 
 empty_set([]).
+/* member_set(E, S) :- member(E, S). */
 member_set([State, Parent, _, _, _], [[State, Parent, _, _, _]|_]).
 member_set(X, [_|T]) :- member_set(X, T).
 
@@ -41,6 +42,11 @@ set_difference([], _, []).
 set_difference([H|T], S, T_new) :- member_set(H, S),
 	set_difference(T, S, T_new), !.
 set_difference([H|T], S, [H|T_new]) :- set_difference(T, S, T_new), !.
+
+s_difference([], _, []).
+s_difference([H|T], [HS|HT], T_new) :- H = HS,
+	s_difference(T, HT, T_new), !.
+s_difference([H|T], [_|HT], [H|T_new]) :- s_difference(T, HT, T_new), !.
 
 equal_set(S1, S2) :- subset(S1, S2), subset(S2, S1).
 
@@ -65,7 +71,13 @@ insert_sort_queue(State, [H|T], [H | T_new]) :-
 
 dequeue_pq(First, [First|Rest], Rest).
 
-test:-go([[2,8,3],[1,0,4],[7,6,5]],[[1,2,3],[8,0,4],[7,6,5]]).
+test :-
+    go([[1, 2, 3],
+        [8, 0, 4],
+        [7, 6, 5]],
+       [[0, 1, 2],
+        [8, 6, 3],
+        [7, 5, 4]]).
 
 go(Start, Goal) :-
 	empty_set(Closed_set),
@@ -98,8 +110,12 @@ path(Open_pq, Closed_set, Goal) :-
 	writelist(New_closed_set), nl,
         path(New_open_pq, New_closed_set, Goal), !.
 
+
 get_children([State,_,D,_, _], Rest_open_pq, Closed_set, Children, Goal) :-
      (bagof(Child, moves([State, _, D, _, _], Rest_open_pq, Closed_set, Child, Goal), Children);Children=[]).
+/*,
+	write('New_children: '),
+	print_stack(Children), nl.*/
 
 moves([State, _, Depth, _, _], Rest_open_pq, Closed_set,
        [Next, State, New_D, H, S], Goal) :-
@@ -107,87 +123,66 @@ moves([State, _, Depth, _, _], Rest_open_pq, Closed_set,
 	not(member_pq([Next, _, _, _, _], Rest_open_pq)),
 	not(member_set([Next, _, _, _, _], Closed_set)),
 	New_D is Depth + 1,
-	heuristic(Next, Goal, H),
-	S is New_D + H.
+	heuristic(Next, Goal, H),		% application specific
+	S is New_D + H. %, write(Next), nl.
 
-heuristic(Cstate, Goal, H) :- 
-    flatten(Cstate, Flat_Cstate),
-    flatten(Goal, Flat_Goal),
-    count_diff_tiles(Flat_Cstate, Flat_Goal, H).
+heuristic(Cstate, Goal, 0) :- Cstate = Goal, !.
+heuristic(State, Goal, H) :-
+	flatten(State, FState),
+	flatten(Goal, FGoal),
+	s_difference(FGoal, FState, Diff), length(Diff, H).
 
-count_diff_tiles([], [], 0).
-count_diff_tiles([H1|T1], [H2|T2], Count) :-
-    H1 \= H2,
-    count_diff_tiles(T1, T2, TailCount),
-    Count is 1 + TailCount.
-count_diff_tiles([H1|T1], [H2|T2], Count) :-
-    H1 = H2,
-    count_diff_tiles(T1, T2, Count).
+printsolution([State, nil, _, _, _], _) :- write(State), nl.
+printsolution([State, Parent, _, _, _], Closed_set) :-
+	member_set([Parent, Grandparent, _, _, _], Closed_set),
+	printsolution([Parent, Grandparent, _, _, _], Closed_set),
+	write(State), nl.
+
+zero_position([Row|_], X, Y) :-
+	nth0(Y, Row, 0),
+	X is 0.
+
+zero_position([_|Rest], X, Y) :-
+	zero_position(Rest, X1, Y),
+	X is X1 + 1.
 
 move(State, Next) :-
-    zero_position(State, X, Y),
-    move_direction(Direction),
-    update_state(State, Direction, X, Y, Next).
+	zero_position(State, X, Y),
+	move_to(State, X, Y, Next).
 
-zero_position([[0|_]|_], 0, 0).
-zero_position([[_|SubRow]|OtherRows], X, Y) :-
-    zero_position([SubRow|OtherRows], X2, Y),
-    X is X2 + 1.
-zero_position([_|OtherRows], X, Y) :-
-    zero_position(OtherRows, X, Y2),
-    Y is Y2 + 1.
+move_to(State, X, Y, Next) :-
+	Y > 0,
+	NewY is Y - 1,
+	swap(State, X, Y, X, NewY, Next).
 
-move_direction(left).
-move_direction(right).
-move_direction(up).
-move_direction(down).
+move_to(State, X, Y, Next) :-
+	Y < 2,
+	NewY is Y + 1,
+	swap(State, X, Y, X, NewY, Next).
 
-update_state(State, left, X, Y, NewState) :-
-    Y > 0,
-    NewY is Y - 1,
-    swap(State, X, Y, X, NewY, NewState).
-update_state(State, right, X, Y, NewState) :-
-    Y < 2,
-    NewY is Y + 1,
-    swap(State, X, Y, X, NewY, NewState).
-update_state(State, up, X, Y, NewState) :-
-    X > 0,
-    NewX is X - 1,
-    swap(State, X, Y, NewX, Y, NewState).
-update_state(State, down, X, Y, NewState) :-
-    X < 2,
-    NewX is X + 1,
-    swap(State, X, Y, NewX, Y, NewState).
+move_to(State, X, Y, Next) :-
+	X > 0,
+	NewX is X - 1,
+	swap(State, X, Y, NewX, Y, Next).
 
-swap(State, OldX, OldY, NewX, NewY, NewState) :-
-    replace_element(State, OldX, OldY, NewX, NewY, TempState),
-    replace_element(TempState, NewX, NewY, OldX, OldY, NewState).
+move_to(State, X, Y, Next) :-
+	X < 2,
+	NewX is X + 1,
+	swap(State, X, Y, NewX, Y, Next).
 
-replace_element(State, X, Y, NewX, NewY, NewState) :-
-    replace_nth(State, X, OldRow, NewState, NewRow),
-    replace_nth(OldRow, Y, _, NewRow, Element),
-    nth0(NewY, NewState, ReplacementRow),
-    nth0(Element, ReplacementRow).
+replace_in_list([_|Tail], 0, E, [E|Tail]) :- !.
 
-replace_nth([_|T], 0, X, [X|T]).
-replace_nth([H|T], I, X, [H|R]) :-
-    I > 0,
-    NI is I - 1,
-    replace_nth(T, NI, X, R).
+replace_in_list([H|Tail], Index, E, [H|ResultTail]) :-
+	NextIndex is Index - 1,
+	replace_in_list(Tail, NextIndex, E, ResultTail).
 
-print([]) :- nl.
-print([H|T]) :-
-    print(H),
-    print(T).
-print([H|T]) :-
-    print(H), tab(1),
-    print(T).
-print(H) :-
-    write(H).
+replace_in_matrix(Matrix, X, Y, E, ResultMatrix) :-
+	nth0(X, Matrix, Row),
+	replace_in_list(Row, Y, E, ResultRow),
+	replace_in_list(Matrix, X, ResultRow, ResultMatrix).
 
-printsolution([State, nil, _, _, _], _) :-
-	print(State), nl.
-printsolution([State, Parent, _, _, _], Closed_set) :-
-	member([Parent, Grandparent, _, _, _], Closed_set),
-	printsolution([Parent, Grandparent, _, _, _], Closed_set),
-	print(State), nl.
+swap(State, X, Y, NewX, NewY, Next) :-
+	nth0(NewX, State, Row),
+	nth0(NewY, Row, E),
+	replace_in_matrix(State, X, Y, E, TempState),
+	replace_in_matrix(TempState, NewX, NewY, 0, Next).
