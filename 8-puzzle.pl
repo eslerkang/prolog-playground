@@ -79,6 +79,8 @@ test :-
         [8, 6, 3],
         [7, 5, 4]]).
 
+% test :- go([[7, 2, 4], [5, 0, 6], [8, 3, 1]], [[0, 1, 2], [3, 4, 5], [6, 7, 8]]).
+
 go(Start, Goal) :-
 	empty_set(Closed_set),
 	empty_pq(Open),
@@ -100,22 +102,20 @@ path(Open_pq, Closed_set, Goal) :-
 	dequeue_pq([State, Parent, G, H, F], Open_pq, Rest_open_pq),
 	write('Selected for Visit: '),
 	print(State), nl,
-        get_children([State, Parent, G, H, F],
-		Rest_open_pq, Closed_set, Children, Goal),
+  get_children([State, Parent, G, H, F], Rest_open_pq, Closed_set, Children, Goal),
 	insert_list_pq(Children, Rest_open_pq, New_open_pq),
 	union([[State, Parent, G, H, F]], Closed_set, New_closed_set),
-	write('New_open_pq: '),
-	print_stack(New_open_pq), nl,
-	write('New_closed_set: '),
-	writelist(New_closed_set), nl,
-        path(New_open_pq, New_closed_set, Goal), !.
+	% write('New_open_pq: '),
+	% print_stack(New_open_pq), nl,
+	% write('New_closed_set: '),
+	% writelist(New_closed_set), nl,
+  path(New_open_pq, New_closed_set, Goal), !.
 
 
 get_children([State,_,D,_, _], Rest_open_pq, Closed_set, Children, Goal) :-
      (bagof(Child, moves([State, _, D, _, _], Rest_open_pq, Closed_set, Child, Goal), Children);Children=[]).
-/*,
-	write('New_children: '),
-	print_stack(Children), nl.*/
+		 	% write('New_children: '),
+			% print_stack(Children), nl.
 
 moves([State, _, Depth, _, _], Rest_open_pq, Closed_set,
        [Next, State, New_D, H, S], Goal) :-
@@ -174,7 +174,7 @@ replace_in_list([_|Tail], 0, E, [E|Tail]) :- !.
 
 replace_in_list([H|Tail], Index, E, [H|ResultTail]) :-
 	NextIndex is Index - 1,
-	replace_in_list(Tail, NextIndex, E, ResultTail).
+	replace_in_list(Tail, NextIndex, E, ResultTail), !.
 
 replace_in_matrix(Matrix, X, Y, E, ResultMatrix) :-
 	nth0(X, Matrix, Row),
