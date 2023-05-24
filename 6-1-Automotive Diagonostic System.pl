@@ -366,13 +366,13 @@ rule((fix(Advice) :-
 
 % rules to infer bad component:
 
+rule((bad_component(plugs) :-
+	(bad_system(ignition_system),plugs(dirty))),90).
 rule((bad_component(starter) :-	(bad_system(starter_system),lights(come_on))),50).
 rule((bad_component(battery) :-
 	(bad_system(starter_system),not(lights(come_on)))),90).
 rule((bad_component(timing) :-
 	(bad_system(ignition_system), not(tuned_recently))),80).
-rule((bad_component(plugs) :-
-	(bad_system(ignition_system),plugs(dirty))),90).
 rule((bad_component(ignition_wires) :-
 	(bad_system(ignition_system),
 	not(plugs(dirty)), tuned_recently)),80).
@@ -383,7 +383,7 @@ rule((bad_component(ignition_wires) :-
 rule((bad_system(starter_system) :-
 	(not(car_starts), not(turns_over))),90).
 rule((bad_system(ignition_system) :-
-	(not(car_starts), turns_over,gas_in_carb)),80).
+	(gas_in_fuel_tank, not(car_starts), turns_over,gas_in_carb)),80).
 rule((bad_system(ignition_system) :-
 	(runs(rough),gas_in_carb)),80).
 rule((bad_system(ignition_system) :-
@@ -404,5 +404,6 @@ askable(turns_over, 'Does the engine turn over').
 askable(lights(X),M) :- string_concat('Do the lights ',X,M).
 askable(runs(X),M) :- string_concat('Does it run ',X,M).
 askable(gas_in_carb, 'Is there gas in the carburetor').
+askable(gas_in_fuel_tank, 'Is there gas in the fuel tank').
 askable(tuned_recently, 'Has the car been tuned recently').
 askable(plugs(X),M) :- string_concat('Are the plugs ',X,M).
