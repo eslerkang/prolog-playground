@@ -48,6 +48,18 @@ s_difference([H|T], [HS|HT], T_new) :- H = HS,
 	s_difference(T, HT, T_new), !.
 s_difference([H|T], [_|HT], [H|T_new]) :- s_difference(T, HT, T_new), !.
 
+count_differences(Matrix1, Matrix2, Count) :-
+    flatten(Matrix1, Flat1),
+    flatten(Matrix2, Flat2),
+    count_differences_list(Flat1, Flat2, 0, Count).
+
+count_differences_list([], [], Count, Count).
+count_differences_list([H1|T1], [H2|T2], Acc, Count) :-
+    (H1 \= H2 ->
+        NewAcc is Acc + 1;
+        NewAcc is Acc),
+    count_differences_list(T1, T2, NewAcc, Count).
+
 equal_set(S1, S2) :- subset(S1, S2), subset(S2, S1).
 
 writelist([]) :- nl.
@@ -71,15 +83,12 @@ insert_sort_queue(State, [H|T], [H | T_new]) :-
 
 dequeue_pq(First, [First|Rest], Rest).
 
-test :-
-    go([[1, 2, 3],
-        [8, 0, 4],
-        [7, 6, 5]],
-       [[0, 1, 2],
-        [8, 6, 3],
-        [7, 5, 4]]).
+% test :- go([[1, 2, 3], [8, 0, 4], [7, 6, 5]], [[0, 1, 2], [8, 6, 3], [7, 5, 4]]).
 
 % test :- go([[7, 2, 4], [5, 0, 6], [8, 3, 1]], [[0, 1, 2], [3, 4, 5], [6, 7, 8]]).
+test :- go([[2, 8, 3], [1, 6, 4], [7, 0, 5]], [[1, 2, 3], [8, 0, 4], [7, 6, 5]]).
+
+
 
 go(Start, Goal) :-
 	empty_set(Closed_set),
@@ -105,10 +114,10 @@ path(Open_pq, Closed_set, Goal) :-
   get_children([State, Parent, G, H, F], Rest_open_pq, Closed_set, Children, Goal),
 	insert_list_pq(Children, Rest_open_pq, New_open_pq),
 	union([[State, Parent, G, H, F]], Closed_set, New_closed_set),
-	% write('New_open_pq: '),
-	% print_stack(New_open_pq), nl,
-	% write('New_closed_set: '),
-	% writelist(New_closed_set), nl,
+	write('New_open_pq: '),
+	print_stack(New_open_pq), nl,
+	write('New_closed_set: '),
+	writelist(New_closed_set), nl,
   path(New_open_pq, New_closed_set, Goal), !.
 
 
@@ -124,13 +133,12 @@ moves([State, _, Depth, _, _], Rest_open_pq, Closed_set,
 	not(member_set([Next, _, _, _, _], Closed_set)),
 	New_D is Depth + 1,
 	heuristic(Next, Goal, H),		% application specific
-	S is New_D + H. %, write(Next), nl.
+	S is New_D + H.
+	%, write(Next), nl.
 
 heuristic(Cstate, Goal, 0) :- Cstate = Goal, !.
 heuristic(State, Goal, H) :-
-	flatten(State, FState),
-	flatten(Goal, FGoal),
-	s_difference(FGoal, FState, Diff), length(Diff, H).
+	count_differences(State, Goal, H).
 
 printsolution([State, nil, _, _, _], _) :- write(State), nl.
 printsolution([State, Parent, _, _, _], Closed_set) :-
