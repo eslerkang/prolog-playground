@@ -83,14 +83,35 @@ insert_sort_queue(State, [H|T], [H | T_new]) :-
 
 dequeue_pq(First, [First|Rest], Rest).
 
-% test :- go([[1, 2, 3], [8, 0, 4], [7, 6, 5]], [[0, 1, 2], [8, 6, 3], [7, 5, 4]]).
+% test :- go([[1, 2, 3], [8, 0, 4], [7, 6, 5]], [[0, 1, 2], [8, 6, 3], [7, 5, 4]]), !.
+% 7 / 11
 
-% test :- go([[7, 2, 4], [5, 0, 6], [8, 3, 1]], [[0, 1, 2], [3, 4, 5], [6, 7, 8]]).
-test :- go([[2, 8, 3], [1, 6, 4], [7, 0, 5]], [[1, 2, 3], [8, 0, 4], [7, 6, 5]]).
+% test :- go([[1, 2, 3], [8, 0, 4], [7, 6, 5]], [[1, 2, 3], [4, 5, 6], [7, 8, 0]]), !.
+% unsolvable.
 
+test :- go([[7, 2, 4], [5, 0, 6], [8, 3, 1]], [[0, 1, 2], [3, 4, 5], [6, 7, 8]]), !.
+% 16 / 0
 
+% test :- go([[2, 8, 3], [1, 6, 4], [7, 0, 5]], [[1, 2, 3], [8, 0, 4], [7, 6, 5]]), !.
+% 11 / 7
+
+count_inversions([], 0).
+count_inversions([H|T], Count) :-
+    findall(X, (member(X, T), X < H, H\=0, X\=0), Smaller),
+    length(Smaller, NumSmaller),
+    count_inversions(T, CountT),
+    Count is NumSmaller + CountT.
+
+is_solvable(Start, Goal) :-
+	flatten(Start, FStart),
+	flatten(Goal, FGoal),
+	count_inversions(FStart, IStart),
+	count_inversions(FGoal, IGoal),
+	Diff is (IStart - IGoal) mod 2,
+	Diff \= 1.
 
 go(Start, Goal) :-
+	(is_solvable(Start, Goal) -> true ; write('Cannot solve.'), false),
 	empty_set(Closed_set),
 	empty_pq(Open),
 	heuristic(Start, Goal, H),
@@ -114,10 +135,10 @@ path(Open_pq, Closed_set, Goal) :-
   get_children([State, Parent, G, H, F], Rest_open_pq, Closed_set, Children, Goal),
 	insert_list_pq(Children, Rest_open_pq, New_open_pq),
 	union([[State, Parent, G, H, F]], Closed_set, New_closed_set),
-	write('New_open_pq: '),
-	print_stack(New_open_pq), nl,
-	write('New_closed_set: '),
-	writelist(New_closed_set), nl,
+	%write('New_open_pq: '),
+	%print_stack(New_open_pq), nl,
+	%write('New_closed_set: '),
+	%writelist(New_closed_set), nl,
   path(New_open_pq, New_closed_set, Goal), !.
 
 
