@@ -116,22 +116,23 @@ go(Start, Goal) :-
 	empty_pq(Open),
 	heuristic(Start, Goal, H),
 	insert_pq([Start, nil, 0, H, H], Open, Open_pq),
-	path(Open_pq, Closed_set, Goal).
+	path(Open_pq, Closed_set, Goal, 0).
 
-path(Open_pq, _, _) :-
+path(Open_pq, _, _, _) :-
 	empty_pq(Open_pq),
 	write('Graph searched, no solution found.').
 
-path(Open_pq, Closed_set, Goal) :-
+path(Open_pq, Closed_set, Goal, _) :-
 	dequeue_pq([State, Parent, _, _, _], Open_pq, _),
 	State = Goal,
 	write('The solution path is: '), nl,
 	printsolution([State, Parent, _, _, _], Closed_set).
 
-path(Open_pq, Closed_set, Goal) :-
+path(Open_pq, Closed_set, Goal, S) :-
 	dequeue_pq([State, Parent, G, H, F], Open_pq, Rest_open_pq),
-	write('Selected for Visit: '),
-	print(State), nl,
+	write(S), nl,
+	% write('Selected for Visit: '),
+	% print(State), nl,
   get_children([State, Parent, G, H, F], Rest_open_pq, Closed_set, Children, Goal),
 	insert_list_pq(Children, Rest_open_pq, New_open_pq),
 	union([[State, Parent, G, H, F]], Closed_set, New_closed_set),
@@ -139,7 +140,8 @@ path(Open_pq, Closed_set, Goal) :-
 	%print_stack(New_open_pq), nl,
 	%write('New_closed_set: '),
 	%writelist(New_closed_set), nl,
-  path(New_open_pq, New_closed_set, Goal), !.
+	NS is S+1,
+  path(New_open_pq, New_closed_set, Goal, NS), !.
 
 
 get_children([State,_,D,_, _], Rest_open_pq, Closed_set, Children, Goal) :-
